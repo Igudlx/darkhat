@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -10,51 +11,86 @@
 <body>
 
   <!-- ===================== LOGIN SCREEN ===================== -->
+
   <div id="login-screen">
     <div class="login-title wordmark">darkhat</div>
 
-    <div class="login-card" id="login-card">
-      <div class="login-tabs">
-        <button class="login-tab active" data-tab="login">Log In</button>
-        <button class="login-tab" data-tab="signup">Sign Up</button>
-      </div>
+```
+<div class="login-card" id="login-card">
+  <div class="login-tabs">
+    <button
+      type="button"
+      class="login-tab active"
+      data-tab="login"
+      id="login-tab"
+    >Log In</button>
 
-      <form id="login-form">
-        <div class="field">
-          <label for="login-email">Email</label>
-          <input id="login-email" type="email" autocomplete="username" required />
-        </div>
-        <div class="field">
-          <label for="login-password">Password</label>
-          <input id="login-password" type="password" autocomplete="current-password" required />
-        </div>
-        <button type="submit" class="neon-btn" id="login-submit">Log In</button>
-        <div class="login-error" id="login-error"></div>
-      </form>
+    <button
+      type="button"
+      class="login-tab"
+      data-tab="signup"
+      id="signup-tab"
+    >Sign Up</button>
+  </div>
+
+  <form id="login-form">
+    <div class="field">
+      <label for="login-email">Email</label>
+      <input
+        id="login-email"
+        type="email"
+        autocomplete="username"
+        required
+      />
     </div>
 
-    <div class="login-status hidden" id="login-status"></div>
+    <div class="field">
+      <label for="login-password">Password</label>
+      <input
+        id="login-password"
+        type="password"
+        autocomplete="current-password"
+        required
+      />
+    </div>
+
+    <button type="submit" class="neon-btn" id="login-submit">
+      Log In
+    </button>
+
+    <div class="login-error" id="login-error"></div>
+  </form>
+</div>
+
+<div class="login-status hidden" id="login-status"></div>
+```
+
   </div>
 
   <!-- ===================== DESKTOP ===================== -->
+
   <div id="desktop-root" class="hidden">
     <div id="wallpaper">
       <div class="wp-mark wordmark" id="wallpaper-mark">darkhat</div>
     </div>
 
-    <div id="desktop-icons"></div>
-    <div id="window-layer"></div>
+```
+<div id="desktop-icons"></div>
+<div id="window-layer"></div>
 
-    <div id="taskbar">
-      <button id="start-btn" title="darkhat">▣</button>
-      <div id="taskbar-items"></div>
-      <div id="clock"></div>
-    </div>
+<div id="taskbar">
+  <button id="start-btn" title="darkhat">▣</button>
+  <div id="taskbar-items"></div>
+  <div id="clock"></div>
+</div>
 
-    <div id="start-menu" class="hidden"></div>
+<div id="start-menu" class="hidden"></div>
+```
+
   </div>
 
   <!-- Firebase (modular SDK via CDN, matches project's existing usage) -->
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import * as Auth from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -62,6 +98,7 @@
     import { firebaseConfig } from "/js/firebase-config.js";
 
     const app = initializeApp(firebaseConfig);
+
     window.__DARKHAT_FIREBASE__ = {
       app,
       auth: Auth.getAuth(app),
@@ -69,20 +106,123 @@
       db: Firestore.getFirestore(app),
       FirestoreLib: Firestore,
     };
+
     window.dispatchEvent(new Event("darkhat:firebase-ready"));
   </script>
 
   <script type="module" src="/js/auth.js"></script>
+
   <script type="module" src="/js/contextMenu.js"></script>
+
   <script type="module" src="/js/windowManager.js"></script>
+
   <script type="module" src="/js/fileSystem.js"></script>
+
   <script type="module" src="/js/desktop.js"></script>
+
   <script type="module" src="/js/apps/notes.js"></script>
+
   <script type="module" src="/js/apps/coder.js"></script>
+
   <script type="module" src="/js/apps/gamehub.js"></script>
+
   <script type="module" src="/js/apps/ai.js"></script>
+
   <script type="module" src="/js/apps/extra.js"></script>
+
   <script type="module" src="/js/apps/settings.js"></script>
+
   <script type="module" src="/js/main.js"></script>
+
+  <!-- ===================== LOGIN TAB FIX ===================== -->
+
+  <script>
+    (() => {
+      function setupLoginTabs() {
+        const loginCard = document.getElementById("login-card");
+        const loginTab = document.getElementById("login-tab");
+        const signupTab = document.getElementById("signup-tab");
+
+        if (!loginCard || !loginTab || !signupTab) return;
+
+        /*
+         * Make sure nothing sitting over the login card prevents
+         * the tab buttons from receiving pointer input.
+         *
+         * This does not change the visual appearance.
+         */
+        loginCard.style.pointerEvents = "auto";
+        loginCard.style.position = "relative";
+        loginCard.style.zIndex = "1000";
+
+        loginTab.style.pointerEvents = "auto";
+        signupTab.style.pointerEvents = "auto";
+
+        /*
+         * Use event delegation so this continues to work even if
+         * auth.js replaces or modifies elements inside the card.
+         */
+        if (!window.__DARKHAT_LOGIN_TABS_FIXED__) {
+          window.__DARKHAT_LOGIN_TABS_FIXED__ = true;
+
+          document.addEventListener("click", function (event) {
+            const tab = event.target.closest(".login-tab");
+
+            if (!tab) return;
+            if (!document.getElementById("login-card")) return;
+
+            const tabName = tab.getAttribute("data-tab");
+
+            if (tabName !== "login" && tabName !== "signup") {
+              return;
+            }
+
+            /*
+             * Stop another overlay/handler from preventing the tab
+             * from doing its job, while still allowing the existing
+             * auth.js handlers to run.
+             */
+            event.stopPropagation();
+
+            document.querySelectorAll(".login-tab").forEach((button) => {
+              button.classList.toggle(
+                "active",
+                button.getAttribute("data-tab") === tabName
+              );
+            });
+
+            /*
+             * Notify existing auth code that the active tab changed.
+             */
+            window.dispatchEvent(
+              new CustomEvent("darkhat:auth-tab-change", {
+                detail: {
+                  tab: tabName
+                }
+              })
+            );
+          }, true);
+        }
+      }
+
+      /*
+       * Run immediately.
+       */
+      setupLoginTabs();
+
+      /*
+       * Run again after the other modules have initialized,
+       * in case auth.js modifies the login UI.
+       */
+      window.addEventListener("darkhat:firebase-ready", setupLoginTabs);
+
+      document.addEventListener("DOMContentLoaded", setupLoginTabs);
+
+      setTimeout(setupLoginTabs, 100);
+      setTimeout(setupLoginTabs, 500);
+      setTimeout(setupLoginTabs, 1000);
+    })();
+  </script>
+
 </body>
 </html>
