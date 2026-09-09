@@ -1,0 +1,424 @@
+/* ==========================================================================
+   Darkhat — theme tokens & base
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --black:        #050505;
+  --gray-950:     #0b0b0b;
+  --gray-900:     #121212;
+  --gray-850:     #171717;
+  --gray-800:     #1c1c1c;
+  --gray-700:     #262626;
+  --gray-600:     #3a3a3a;
+  --gray-500:     #545454;
+  --gray-400:     #767676;
+  --gray-300:     #9c9c9c;
+  --gray-200:     #c2c2c2;
+  --gray-100:     #e4e4e4;
+
+  --neon:         #57f2d0;
+  --neon-dim:      #2fae95;
+  --neon-glow:    rgba(87, 242, 208, 0.45);
+  --danger:       #ff4d4d;
+
+  --radius-sm:    6px;
+  --radius-md:    10px;
+  --taskbar-h:    52px;
+
+  --font-ui:      'Roboto', system-ui, sans-serif;
+  --font-mono:    'Roboto Mono', 'SFMono-Regular', monospace;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+html, body{
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background: var(--black);
+  color: var(--gray-200);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea, select{ font-family: inherit; }
+button{ cursor: pointer; }
+::selection{ background: var(--neon-glow); color: var(--black); }
+
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: var(--gray-900); }
+::-webkit-scrollbar-thumb{ background: var(--gray-600); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover{ background: var(--gray-500); }
+
+a{ color: var(--neon); }
+
+.hidden{ display: none !important; }
+
+/* ==========================================================================
+   Wordmark — reused on login + wallpaper
+   ========================================================================== */
+.wordmark{
+  font-family: var(--font-ui);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--gray-600) 0%, var(--gray-200) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+}
+
+/* ==========================================================================
+   Login screen
+   ========================================================================== */
+#login-screen{
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 34px;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(60,60,60,0.35), transparent 60%),
+    linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+  z-index: 1000;
+  transition: opacity .6s ease, transform .6s ease;
+}
+#login-screen.leaving{
+  transform: scale(1.35);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.login-title{
+  font-size: clamp(48px, 9vw, 96px);
+  line-height: 1;
+}
+
+.login-card{
+  width: min(360px, 88vw);
+  background: rgba(18,18,18,0.85);
+  border: 1px solid var(--gray-700);
+  border-radius: var(--radius-md);
+  padding: 28px 26px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.login-tabs{
+  display: flex; gap: 4px; margin-bottom: 18px;
+  background: var(--gray-900); border-radius: var(--radius-sm); padding: 4px;
+}
+.login-tab{
+  flex: 1; padding: 8px 0; text-align: center; border: none; background: transparent;
+  color: var(--gray-400); border-radius: 4px; font-weight: 700; font-size: 13px;
+  letter-spacing: .04em;
+}
+.login-tab.active{ background: var(--gray-800); color: var(--neon); }
+
+.field{ margin-bottom: 14px; }
+.field label{ display:block; font-size: 11px; color: var(--gray-400); margin-bottom: 6px; font-weight:700; }
+.field input{
+  width: 100%; padding: 12px 12px; background: var(--gray-950); color: var(--gray-100);
+  border: 1px solid var(--gray-600); border-radius: var(--radius-sm); outline: none;
+  font-weight: 500; transition: border-color .15s, box-shadow .15s;
+}
+.field input:focus{
+  border-color: var(--neon);
+  box-shadow: 0 0 0 3px var(--neon-glow);
+}
+
+.neon-btn{
+  width: 100%; padding: 13px 0; margin-top: 6px;
+  background: var(--gray-900); color: var(--neon);
+  border: 1px solid var(--neon-dim); border-radius: var(--radius-sm);
+  font-weight: 700; font-size: 15px; letter-spacing: .03em;
+  box-shadow: 0 0 14px -4px var(--neon-glow) inset, 0 0 18px -8px var(--neon-glow);
+  transition: box-shadow .15s, transform .1s;
+}
+.neon-btn:hover{ box-shadow: 0 0 22px -2px var(--neon-glow) inset, 0 0 26px -6px var(--neon-glow); }
+.neon-btn:active{ transform: scale(.98); }
+.neon-btn:disabled{ opacity: .5; cursor: default; }
+
+.login-error{
+  color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 14px; text-align: center;
+}
+
+.login-status{
+  color: var(--gray-300); font-size: 14px; letter-spacing: .04em; min-height: 18px; text-align: center;
+}
+
+/* ==========================================================================
+   Desktop
+   ========================================================================== */
+#desktop-root{
+  position: fixed; inset: 0;
+  overflow: hidden;
+}
+
+#wallpaper{
+  position: absolute; inset: 0;
+  background: linear-gradient(200deg, #2b2b2b 0%, #000 75%);
+  background-size: 200% 200%;
+  animation: wallpaperDrift 14s ease-in-out infinite alternate;
+}
+@keyframes wallpaperDrift{
+  0%{ background-position: 0% 0%; }
+  100%{ background-position: 100% 100%; }
+}
+#wallpaper .wp-mark{
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: min(22vw, 340px);
+  filter: blur(var(--wallpaper-blur, 6px));
+  opacity: .55;
+}
+
+#desktop-icons{
+  position: absolute; inset: 0;
+  padding: 18px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fill, 92px);
+  grid-auto-columns: 92px;
+  gap: 4px 8px;
+  align-content: start;
+  bottom: calc(var(--taskbar-h) + 10px);
+  height: calc(100% - var(--taskbar-h) - 10px);
+}
+
+.desk-icon{
+  width: 92px; height: 92px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 6px; padding: 8px 4px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  text-align: center;
+  user-select: none;
+  -webkit-user-drag: element;
+}
+.desk-icon:hover{ background: rgba(255,255,255,0.05); }
+.desk-icon.selected{ background: rgba(87,242,208,0.12); border-color: var(--neon-dim); }
+.desk-icon .icon-img{
+  width: 42px; height: 42px; border-radius: 6px; object-fit: cover;
+  background: var(--gray-850); border: 1px solid var(--gray-700);
+}
+.desk-icon .icon-fallback{
+  width: 42px; height: 42px; border-radius: 6px; background: #000;
+  border: 1px solid var(--gray-600);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gray-400); font-weight: 900; font-size: 20px;
+}
+.desk-icon .icon-label{
+  font-size: 11.5px; color: var(--gray-100); font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0,0,0,.9);
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   Context menu
+   ========================================================================== */
+.ctx-menu{
+  position: fixed; z-index: 5000;
+  min-width: 190px;
+  background: var(--gray-900); border: 1px solid var(--gray-600); border-radius: var(--radius-sm);
+  padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
+}
+.ctx-item{
+  padding: 9px 12px; font-size: 13px; font-weight: 500; color: var(--gray-100);
+  border-radius: 4px; display:flex; align-items:center; gap:8px;
+}
+.ctx-item:hover{ background: var(--gray-800); color: var(--neon); }
+.ctx-item.disabled{ color: var(--gray-600); pointer-events: none; }
+.ctx-sep{ height: 1px; background: var(--gray-700); margin: 6px 4px; }
+
+/* ==========================================================================
+   Windows
+   ========================================================================== */
+.window{
+  position: absolute;
+  min-width: 320px; min-height: 220px;
+  background: var(--gray-950);
+  border: 1px solid var(--gray-700);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.window.focused{ border-color: var(--gray-500); box-shadow: 0 24px 70px rgba(0,0,0,.7), 0 0 0 1px rgba(87,242,208,.25); }
+.window.maximized{ border-radius: 0; }
+
+.win-titlebar{
+  height: 40px; flex: 0 0 auto;
+  background: var(--gray-900);
+  border-bottom: 1px solid var(--gray-700);
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 8px 0 12px;
+  cursor: default;
+}
+.win-titlebar .t-icon{ width: 18px; height: 18px; border-radius: 4px; }
+.win-titlebar .t-title{ font-size: 12.5px; font-weight: 700; color: var(--gray-200); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.win-btn{
+  width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px;
+  color: var(--gray-400); display:flex; align-items:center; justify-content:center; font-size: 13px;
+}
+.win-btn:hover{ background: var(--gray-800); color: var(--gray-100); }
+.win-btn.close:hover{ background: #4a1414; color: var(--danger); }
+
+.win-body{ flex: 1; overflow: auto; position: relative; background: var(--gray-950); }
+
+.resize-handle{ position: absolute; }
+.rh-e{ top:0; right:-3px; width:6px; height:100%; cursor: ew-resize; }
+.rh-w{ top:0; left:-3px; width:6px; height:100%; cursor: ew-resize; }
+.rh-s{ bottom:-3px; left:0; height:6px; width:100%; cursor: ns-resize; }
+.rh-n{ top:-3px; left:0; height:6px; width:100%; cursor: ns-resize; }
+.rh-se{ bottom:-4px; right:-4px; width:12px; height:12px; cursor: nwse-resize; }
+.rh-sw{ bottom:-4px; left:-4px; width:12px; height:12px; cursor: nesw-resize; }
+.rh-ne{ top:-4px; right:-4px; width:12px; height:12px; cursor: nesw-resize; }
+.rh-nw{ top:-4px; left:-4px; width:12px; height:12px; cursor: nwse-resize; }
+
+/* ==========================================================================
+   Taskbar
+   ========================================================================== */
+#taskbar{
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--taskbar-h);
+  background: rgba(10,10,10,0.92);
+  border-top: 1px solid var(--gray-700);
+  display: flex; align-items: center; gap: 6px; padding: 0 8px;
+  backdrop-filter: blur(10px);
+  z-index: 4000;
+}
+#start-btn{
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  background: var(--gray-900); border: 1px solid var(--gray-600);
+  color: var(--gray-100); font-weight: 900; font-size: 15px;
+  display:flex; align-items:center; justify-content:center;
+}
+#start-btn:hover{ border-color: var(--neon-dim); color: var(--neon); }
+#taskbar-items{ flex: 1; display: flex; gap: 6px; height: 100%; align-items: center; overflow-x: auto; }
+.task-item{
+  height: 36px; padding: 0 12px; border-radius: var(--radius-sm);
+  background: var(--gray-900); border: 1px solid var(--gray-700);
+  color: var(--gray-300); font-size: 12px; font-weight: 700;
+  display:flex; align-items:center; gap:8px; white-space: nowrap;
+}
+.task-item img{ width:16px; height:16px; border-radius:3px; }
+.task-item.active{ border-color: var(--neon-dim); color: var(--neon); }
+#clock{ color: var(--gray-400); font-size: 12px; font-weight: 700; padding: 0 10px; letter-spacing: .03em; }
+
+/* ==========================================================================
+   Start menu / settings
+   ========================================================================== */
+#start-menu{
+  position: absolute; left: 8px; bottom: calc(var(--taskbar-h) + 8px);
+  width: 300px;
+  background: var(--gray-900); border: 1px solid var(--gray-600); border-radius: var(--radius-md);
+  box-shadow: 0 20px 50px rgba(0,0,0,.6);
+  padding: 14px; z-index: 4500;
+}
+#start-menu h3{ margin: 4px 4px 12px; font-size: 13px; color: var(--gray-400); letter-spacing: .04em; }
+.start-row{
+  display:flex; align-items:center; justify-content: space-between;
+  padding: 10px 8px; border-radius: 6px; font-size: 13px; color: var(--gray-100); font-weight: 600;
+}
+.start-row:hover{ background: var(--gray-800); }
+.start-row input[type=range]{ width: 120px; accent-color: var(--neon); }
+.start-btn-danger{ color: var(--danger); }
+.start-divider{ height:1px; background: var(--gray-700); margin: 8px 0; }
+
+/* ==========================================================================
+   Generic app UI helpers (used across apps)
+   ========================================================================== */
+.app-toolbar{
+  display:flex; align-items:center; gap:10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--gray-800); background: var(--gray-900);
+}
+.app-btn{
+  padding: 8px 14px; background: var(--gray-850); border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm); color: var(--gray-100); font-size: 12.5px; font-weight: 700;
+}
+.app-btn:hover{ border-color: var(--neon-dim); color: var(--neon); }
+.app-btn.primary{ background: var(--gray-800); border-color: var(--neon-dim); color: var(--neon); }
+.app-btn.danger{ border-color: #6e2323; color: var(--danger); }
+.app-btn:disabled{ opacity:.4; }
+
+.split{ display:flex; height: 100%; }
+.sidebar{ width: 220px; flex: 0 0 auto; background: var(--gray-900); border-right: 1px solid var(--gray-800);
+  overflow-y: auto; }
+.sidebar-item{ padding: 10px 12px; font-size: 12.5px; color: var(--gray-300); font-weight: 600;
+  display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.sidebar-item:hover{ background: var(--gray-850); }
+.sidebar-item.active{ background: var(--gray-800); color: var(--neon); }
+.sidebar-item .del{ opacity:0; color: var(--gray-500); }
+.sidebar-item:hover .del{ opacity:1; }
+.sidebar-item .del:hover{ color: var(--danger); }
+
+.empty-state{ display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color: var(--gray-500); font-size: 13px; gap: 8px; text-align:center; padding: 20px; }
+
+/* file explorer grid (Notes / System / Extra / Finished Projects) */
+.file-grid{ display:grid; grid-template-columns: repeat(auto-fill, 96px); gap: 14px; padding: 16px; align-content:start; }
+.file-item{ width: 96px; display:flex; flex-direction:column; align-items:center; gap:6px; padding: 8px 4px; border-radius:6px; border:1px solid transparent; text-align:center; }
+.file-item:hover{ background: rgba(255,255,255,.05); }
+.file-item.selected{ background: rgba(87,242,208,.12); border-color: var(--neon-dim); }
+.file-item .icon-img, .file-item .icon-fallback{ width:40px; height:40px; }
+.file-item .name{ font-size: 11px; color: var(--gray-200); font-weight:700; word-break: break-word; }
+
+/* GameHub buttons */
+.gamehub-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 12px; padding: 16px; }
+.game-tile{
+  background: var(--gray-900); border: 1px solid var(--gray-700); border-radius: var(--radius-sm);
+  padding: 14px 10px; display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center; min-height: 96px;
+}
+.game-tile:hover{ border-color: var(--gray-400); background: var(--gray-850); }
+.game-tile .icon-img, .game-tile .icon-fallback{ width: 36px; height: 36px; }
+.game-tile .g-name{ font-size: 12px; font-weight: 700; color: var(--gray-100); }
+
+/* AI chat */
+.chat-log{ padding: 16px; display:flex; flex-direction:column; gap: 14px; overflow-y:auto; }
+.msg{ max-width: 78%; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height:1.5; white-space: pre-wrap; }
+.msg.user{ align-self:flex-end; background: var(--gray-800); border: 1px solid var(--gray-600); }
+.msg.ai{ align-self:flex-start; background: var(--gray-900); border: 1px solid var(--gray-800); }
+.code-block{ position: relative; background: #000; border: 1px solid var(--gray-700); border-radius: 8px;
+  margin-top: 8px; font-family: var(--font-mono); font-size: 12px; overflow:auto; }
+.code-block pre{ margin:0; padding: 30px 12px 12px; white-space: pre; overflow-x:auto; }
+.code-copy-btn{ position:absolute; top:6px; right:6px; padding: 4px 9px; font-size:10px; }
+.chat-input-row{ display:flex; gap: 8px; padding: 12px; border-top: 1px solid var(--gray-800); }
+.chat-input-row textarea{ flex:1; resize:none; background: var(--gray-950); border:1px solid var(--gray-700);
+  border-radius: var(--radius-sm); color: var(--gray-100); padding: 10px; font-family: var(--font-ui); font-size:13px; }
+.key-row{ display:flex; align-items:center; gap:8px; }
+.key-row input{ width: 170px; background: var(--gray-950); border: 1px solid var(--gray-700); border-radius: 6px;
+  padding: 7px 9px; color: var(--gray-100); font-size: 11.5px; }
+.key-note{ font-size: 10.5px; color: var(--gray-500); font-weight:500; max-width: 220px; }
+
+/* CodeR */
+.coder-layout{ display:flex; flex-direction:column; height:100%; }
+.coder-tabs{ display:flex; gap:4px; padding: 8px 10px 0; }
+.coder-tab{ padding: 7px 14px; font-size:11.5px; font-weight:700; color: var(--gray-400);
+  background: var(--gray-900); border: 1px solid var(--gray-800); border-bottom:none;
+  border-radius: 6px 6px 0 0; }
+.coder-tab.active{ color: var(--neon); background: var(--gray-950); border-color: var(--gray-700); }
+.coder-editor{ flex:1; background:#000; }
+.coder-editor textarea{ width:100%; height:100%; background:#000; color:#d8d8d8; border:none; outline:none;
+  resize:none; font-family: var(--font-mono); font-size:13px; padding: 14px; line-height:1.5; }
+
+/* Notepad */
+.note-editor{ display:flex; flex-direction:column; height:100%; }
+.note-editor input.title{ background: var(--gray-950); border:none; border-bottom:1px solid var(--gray-800);
+  color: var(--gray-100); font-size:15px; font-weight:700; padding: 12px 14px; outline:none; }
+.note-editor textarea{ flex:1; background: var(--gray-950); border:none; color: var(--gray-200); padding: 14px;
+  font-size:13.5px; font-weight:500; outline:none; resize:none; line-height:1.6; }
+
+/* password gate (Extra) */
+.gate{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:14px; padding: 20px; }
+.gate input{ width: 220px; text-align:center; }
+.gate .warn{ font-size: 11.5px; color: var(--gray-500); max-width: 320px; text-align:center; }
+
+.text-viewer{ padding: 20px; font-size: 13.5px; line-height:1.7; color: var(--gray-200); white-space: pre-wrap; }
+
+@media (max-width: 720px){
+  .sidebar{ width: 160px; }
+  .desk-icon{ width: 78px; height: 78px; }
+}
