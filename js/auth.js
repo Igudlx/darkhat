@@ -132,7 +132,18 @@ function initAuth() {
   });
 }
 
-window.addEventListener("darkhat:firebase-ready", initAuth, { once: true });
+function boot() {
+  // window.__DARKHAT_FIREBASE__ may already be set by the time this file runs
+  // (module scripts execute in document order, and the Firebase setup script
+  // runs before this one) — in that case the "darkhat:firebase-ready" event
+  // already fired and we'd miss it by only listening for it. Check first.
+  if (window.__DARKHAT_FIREBASE__) {
+    initAuth();
+  } else {
+    window.addEventListener("darkhat:firebase-ready", initAuth, { once: true });
+  }
+}
+boot();
 
 // Exposed so Settings ("Log out") can send the user back to the login screen.
 window.darkhatSignOut = async function () {
