@@ -1,13 +1,13 @@
 // js/apps/explorer.js
 // A reusable folder/grid file-explorer, used for the "System" and "Finished Projects"
-// desktop folders. Supports (for System only) creating subfolders/text files, and
-// rename/delete/cut/copy/paste — the familiar right-click flow.
+// desktop folders, and for opening a folder that lives directly on the desktop.
+// Supports (where allowCreate is true) creating subfolders/text files, and the
+// familiar rename/delete/cut/copy/paste right-click flow.
 
 import { openWindow } from "../windowManager.js";
 import { showContextMenu } from "../contextMenu.js";
+import { setClipboard, getClipboard, clearClipboard } from "../clipboard.js";
 import * as FS from "../fileSystem.js";
-
-let clipboard = null; // { ids: [...], mode: "cut"|"copy" }
 
 function iconFor(item) {
   if (item.type === "folder") return "/images/folder.png";
@@ -16,7 +16,14 @@ function iconFor(item) {
   return null;
 }
 
-export function openExplorer({ appId, title, iconSrc, location, allowCreate }) {
+/**
+ * @param {Object} opts
+ * @param {string} opts.location - "system" | "desktop" | "finished"
+ * @param {string} [opts.initialParentId] - open already-scoped inside this folder id
+ * @param {string} [opts.initialBreadcrumb] - folder name shown in the crumb when initialParentId is set
+ * @param {Function} [opts.onChange] - called after any create/rename/delete/paste, e.g. to refresh the desktop
+ */
+export function openExplorer({ appId, title, iconSrc, location, allowCreate, initialParentId = null, initialBreadcrumb, onChange }) {
   const root = document.createElement("div");
   root.style.height = "100%";
   root.style.display = "flex";
@@ -33,8 +40,10 @@ export function openExplorer({ appId, title, iconSrc, location, allowCreate }) {
   grid.className = "file-grid";
   root.appendChild(grid);
 
-  let parentId = null;
-  const stack = []; // breadcrumb of {id, name}
+  let parentId = initialParentId;
+  const stack = initialParentId ? [{ id: initialParentId, name: initialBreadcrumb || "" }] : [];
+
+  function notifyChange() { if (onChange) onChange(); }
 
   async function render() {
     crumb.textContent = title + (stack.length ? " / " + stack.map((s) => s.name).join(" / ") : "");
@@ -84,8 +93,8 @@ export function openExplorer({ appId, title, iconSrc, location, allowCreate }) {
     if (allowCreate) {
       menu.push(
         { label: "Rename", onClick: () => renameItem(item) },
-        { label: "Cut", onClick: () => { clipboard = { ids: [item.id], mode: "cut" }; } },
-        { label: "Copy", onClick: () => { clipboard = { ids: [item.id], mode: "copy" }; } },
+        { label: "Cut", onClick: () => setClipboard([item.id], "cut") },
+        { label: "Copy", onClick: () => setClipboard([item.id], "copy") },
         { sep: true },
         { label: "Delete", danger: true, onClick: () => deleteItem(item) },
       );
@@ -100,7 +109,7 @@ export function openExplorer({ appId, title, iconSrc, location, allowCreate }) {
         { label: "New Folder", onClick: createFolder },
         { label: "New Text File", onClick: createNote },
       );
-      if (clipboard) menu.push({ label: "Paste", onClick: pasteClipboard });
+      if (getClipboard()) menu.push({ label: "Paste", onClick: pasteClipboard });
       menu.push({ sep: true });
     }
     menu.push({ label: "Refresh", onClick: render });
@@ -128,39 +137,40 @@ export function openExplorer({ appId, title, iconSrc, location, allowCreate }) {
     const name = prompt("Folder name:", "New Folder");
     if (!name) return;
     await FS.createFile({ type: "folder", name, location, parentId });
-    render();
+    render(); notifyChange();
   }
   async function createNote() {
     const name = prompt("File name:", "New Note");
     if (!name) return;
     await FS.createFile({ type: "note", name, content: "", location, parentId });
-    render();
+    render(); notifyChange();
   }
   async function renameItem(item) {
     const name = prompt("Rename:", item.name);
     if (!name) return;
     await FS.updateFile(item.id, { name });
-    render();
+    render(); notifyChange();
   }
   async function deleteItem(item) {
     if (!confirm(`Delete "${item.name}"?`)) return;
     await FS.deleteFile(item.id);
-    render();
+    render(); notifyChange();
   }
   async function pasteClipboard() {
-    if (!clipboard) return;
-    for (const id of clipboard.ids) {
+    const clip = getClipboard();
+    if (!clip) return;
+    for (const id of clip.ids) {
       const src = await FS.getFile(id);
       if (!src) continue;
-      if (clipboard.mode === "cut") {
-        await FS.updateFile(id, { parentId });
+      if (clip.mode === "cut") {
+        await FS.updateFile(id, { parentId, location });
       } else {
         const { id: _drop, createdAt, updatedAt, ...rest } = src;
         await FS.createFile({ ...rest, parentId, name: rest.name + " (copy)" });
       }
     }
-    if (clipboard.mode === "cut") clipboard = null;
-    render();
+    if (clip.mode === "cut") clearClipboard();
+    render(); notifyChange();
   }
 
   grid.addEventListener("contextmenu", (e) => {
