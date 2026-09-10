@@ -92,6 +92,7 @@ async function handleSubmit(e) {
   const email = els.email.value.trim();
   const password = els.password.value;
   els.submit.disabled = true;
+  bootHandled = true; // this submit now owns the transition; onAuthStateChanged should stay out of the way
 
   try {
     let cred;
@@ -99,12 +100,19 @@ async function handleSubmit(e) {
       cred = await AuthLib.signInWithEmailAndPassword(auth, email, password);
     } else {
       cred = await AuthLib.createUserWithEmailAndPassword(auth, email, password);
-      await ensureUserDoc(cred.user.uid, email);
+      try {
+        await ensureUserDoc(cred.user.uid, email);
+      } catch (docErr) {
+        // Don't let a Firestore hiccup (e.g. rules not deployed yet) block the
+        // account from actually being logged in — the account itself was created fine.
+        console.warn("Couldn't create the account's profile doc:", docErr);
+      }
     }
     await playLoggingInLoop(1000);
     await transitionToDesktop(cred.user);
   } catch (err) {
     els.submit.disabled = false;
+    bootHandled = false; // this attempt failed; let a future real sign-in still work normally
     setError(friendlyAuthError(err));
   }
 }
@@ -124,7 +132,11 @@ function initAuth() {
     if (bootHandled) return; // avoid re-triggering on later sign-outs mid-session
     bootHandled = true;
     if (user) {
-      await ensureUserDoc(user.uid, user.email);
+      try {
+        await ensureUserDoc(user.uid, user.email);
+      } catch (docErr) {
+        console.warn("Couldn't verify the account's profile doc:", docErr);
+      }
       await playLoggingInLoop(1000);
       await transitionToDesktop(user);
     }
