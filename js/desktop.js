@@ -1,6 +1,7 @@
 // js/desktop.js
 import { showContextMenu } from "./contextMenu.js";
 import { openExplorer } from "./apps/explorer.js";
+import { setClipboard, getClipboard, clearClipboard } from "./clipboard.js";
 import * as FS from "./fileSystem.js";
 
 const CELL_W = 100, CELL_H = 96;
@@ -82,7 +83,7 @@ function attachDrag(el, id) {
         el.style.zIndex = "";
         placeIcon(el, cell);
         layoutCache[id] = cell;
-        await FS.saveDesktopLayout(layoutCache);
+        FS.saveDesktopLayout(layoutCache).catch((err) => console.warn("Couldn't save icon position:", err));
       }
     }
     document.addEventListener("mousemove", onMove);
@@ -105,6 +106,8 @@ function wireIconEvents(el, id, onOpen, opts = {}) {
     if (opts.deletable) {
       menu.push(
         { label: "Rename", onClick: () => renameFile(opts.fileRef) },
+        { label: "Cut", onClick: () => setClipboard([opts.fileRef.id], "cut") },
+        { label: "Copy", onClick: () => setClipboard([opts.fileRef.id], "copy") },
         { sep: true },
         { label: "Delete", danger: true, onClick: () => deleteFile(opts.fileRef.id) },
       );
@@ -128,15 +131,36 @@ async function deleteFile(id) {
 }
 
 function openDesktopFile(f) {
-  if (f.type === "note") window.DarkhatApps.notes.openNote(f.id);
-  else if (f.type === "project-finished") window.DarkhatApps.coder.openFinishedProject(f);
+  if (f.type === "note") { window.DarkhatApps.notes.openNote(f.id); return; }
+  if (f.type === "project-finished") { window.DarkhatApps.coder.openFinishedProject(f); return; }
+  if (f.type === "folder") {
+    openExplorer({
+      appId: "desktop-folder-" + f.id,
+      title: f.name,
+      iconSrc: "/images/folder.png",
+      location: "desktop",
+      allowCreate: true,
+      initialParentId: f.id,
+      initialBreadcrumb: f.name,
+      onChange: renderDesktop,
+    });
+  }
 }
 
 export async function renderDesktop() {
   const container = document.getElementById("desktop-icons");
   container.innerHTML = "";
-  const userDoc = await FS.getUserDoc();
-  layoutCache = userDoc.desktopLayout || {};
+
+  // Default app icons always render, even if Firestore can't be reached yet
+  // (e.g. security rules not deployed) — the desktop should never be empty.
+  let savedLayout = {};
+  try {
+    const userDoc = await FS.getUserDoc();
+    savedLayout = userDoc.desktopLayout || {};
+  } catch (err) {
+    console.warn("Couldn't load saved desktop layout (check that firestore.rules is deployed):", err);
+  }
+  layoutCache = savedLayout;
 
   DEFAULT_APPS.forEach((app) => {
     const el = buildIconEl(app);
@@ -145,8 +169,13 @@ export async function renderDesktop() {
     container.appendChild(el);
   });
 
-  const files = await FS.listFiles("desktop");
-  files.forEach((f) => {
+  let files = [];
+  try {
+    files = await FS.listFiles("desktop");
+  } catch (err) {
+    console.warn("Couldn't load desktop files (check that firestore.rules is deployed):", err);
+  }
+  files.filter((f) => !f.parentId).forEach((f) => {
     const el = buildIconEl({ name: f.name, icon: fileIcon(f) });
     placeIcon(el, layoutCache[f.id]);
     wireIconEvents(el, f.id, () => openDesktopFile(f), { deletable: true, fileRef: f });
@@ -154,13 +183,47 @@ export async function renderDesktop() {
   });
 }
 
+async function createDesktopFolder() {
+  const name = prompt("Folder name:", "New Folder");
+  if (!name) return;
+  await FS.createFile({ type: "folder", name, location: "desktop", parentId: null });
+  renderDesktop();
+}
+async function createDesktopNote() {
+  const name = prompt("File name:", "New Note");
+  if (!name) return;
+  await FS.createFile({ type: "note", name, content: "", location: "desktop", parentId: null });
+  renderDesktop();
+}
+async function pasteToDesktop() {
+  const clip = getClipboard();
+  if (!clip) return;
+  for (const id of clip.ids) {
+    const src = await FS.getFile(id);
+    if (!src) continue;
+    if (clip.mode === "cut") {
+      await FS.updateFile(id, { parentId: null, location: "desktop" });
+    } else {
+      const { id: _drop, createdAt, updatedAt, ...rest } = src;
+      await FS.createFile({ ...rest, parentId: null, location: "desktop", name: rest.name + " (copy)" });
+    }
+  }
+  if (clip.mode === "cut") clearClipboard();
+  renderDesktop();
+}
+
 function desktopContextMenu(x, y) {
-  showContextMenu(x, y, [
-    { label: "New Text Note", onClick: async () => { await FS.createFile({ type: "note", name: "New Note", content: "", location: "desktop" }); renderDesktop(); } },
+  const menu = [
+    { label: "New Folder", onClick: createDesktopFolder },
+    { label: "New Text File", onClick: createDesktopNote },
+  ];
+  if (getClipboard()) menu.push({ label: "Paste", onClick: pasteToDesktop });
+  menu.push(
     { sep: true },
     { label: "Change Background", onClick: () => window.DarkhatApps.settings.toggle() },
     { label: "Refresh", onClick: renderDesktop },
-  ]);
+  );
+  showContextMenu(x, y, menu);
 }
 
 function updateClock() {
@@ -170,6 +233,7 @@ function updateClock() {
 
 export function initDesktop() {
   renderDesktop();
+
   document.getElementById("desktop-icons").addEventListener("contextmenu", (e) => {
     if (e.target.id !== "desktop-icons") return;
     e.preventDefault();
@@ -185,7 +249,7 @@ export function initDesktop() {
     if (!raw) return;
     const { id } = JSON.parse(raw);
     const cell = pointToCell(e.clientX, e.clientY);
-    await FS.moveFileToLocation(id, "desktop", cell.col, cell.row);
+    await FS.updateFile(id, { location: "desktop", parentId: null, x: cell.col, y: cell.row });
     layoutCache[id] = cell;
     await FS.saveDesktopLayout(layoutCache);
     renderDesktop();
